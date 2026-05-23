@@ -1,3 +1,7 @@
+---
+name: holidayOver
+description: 휴가 종료 — /holidayStart로 중단된 Sub AI를 이전 작업 상태로 재개합니다.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

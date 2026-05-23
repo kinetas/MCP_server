@@ -1,3 +1,7 @@
+---
+name: deleteCompany
+description: 회사 초기화 — 모든 AI 데이터와 생성 파일을 삭제합니다. (되돌릴 수 없음)
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

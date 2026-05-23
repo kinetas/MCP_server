@@ -1,3 +1,7 @@
+---
+name: debugLimit
+description: Debug 한도 설정 — Debugger AI가 Developer AI 작업을 반려할 수 있는 최대 횟수를 설정합니다.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

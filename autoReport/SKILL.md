@@ -1,3 +1,7 @@
+---
+name: autoReport
+description: 자동 보고서 수집 토글 — Collector AI의 자동 report.md 업데이트를 켜거나 끕니다.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

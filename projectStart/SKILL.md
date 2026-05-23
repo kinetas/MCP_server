@@ -1,3 +1,7 @@
+---
+name: projectStart
+description: 프로젝트 시작 — PRD를 분석하고 작업을 분해하여 Sub AI에게 위임합니다.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

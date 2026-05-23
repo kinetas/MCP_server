@@ -33,7 +33,7 @@ for (const dir of fs.readdirSync(ROOT).sort()) {
   const tmplPath = path.join(ROOT, dir, 'SKILL.md.tmpl');
   if (!fs.existsSync(tmplPath)) continue;
 
-  let content = fs.readFileSync(tmplPath, 'utf8');
+  let content = fs.readFileSync(tmplPath, 'utf8').replace(/\r\n/g, '\n');
   let hasUnknown = false;
 
   content = content.replace(/\{\{([A-Z_]+)\}\}/g, (match, name) => {
@@ -43,7 +43,20 @@ for (const dir of fs.readdirSync(ROOT).sort()) {
     return match;
   });
 
-  fs.writeFileSync(path.join(ROOT, dir, 'SKILL.md'), header + content);
+  // YAML 프론트매터가 있으면 그 뒤에 주석 삽입, 없으면 맨 앞에
+  let output;
+  if (content.startsWith('---\n')) {
+    const end = content.indexOf('\n---\n', 4);
+    if (end !== -1) {
+      output = content.slice(0, end + 5) + header + content.slice(end + 5).replace(/^\n/, '');
+    } else {
+      output = header + content;
+    }
+  } else {
+    output = header + content;
+  }
+
+  fs.writeFileSync(path.join(ROOT, dir, 'SKILL.md'), output);
   log(`  ${hasUnknown ? '⚠️ ' : '✅'} ${dir}/SKILL.md`);
   built++;
 }

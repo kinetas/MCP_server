@@ -1,3 +1,7 @@
+---
+name: interceptBoss
+description: Boss AI 대기 모드 — Secretary AI에게 업무를 인계하고 유저 직접 응대 모드로 전환합니다.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

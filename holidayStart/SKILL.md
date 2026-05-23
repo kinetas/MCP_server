@@ -1,3 +1,7 @@
+---
+name: holidayStart
+description: 휴가 모드 — 모든 Sub AI를 일시 중단합니다. Main AI는 대기 상태 유지.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

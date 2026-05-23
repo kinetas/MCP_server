@@ -1,3 +1,7 @@
+---
+name: companyMonitering
+description: Monitoring AI 토글 — Sub AI의 자원 소모 감시를 켜거나 끕니다.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

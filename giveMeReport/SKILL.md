@@ -1,3 +1,7 @@
+---
+name: giveMeReport
+description: 보고서 수동 취합 — Collector AI를 즉시 실행해 fragment를 report.md로 취합합니다.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

@@ -1,3 +1,7 @@
+---
+name: createCompany
+description: 워크스페이스 생성 — doc/, develope/, report/ 등 폴더 및 초기 파일 구조를 생성합니다.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

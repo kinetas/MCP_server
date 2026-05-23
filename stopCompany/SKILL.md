@@ -1,3 +1,7 @@
+---
+name: stopCompany
+description: 회사 일시정지 — 모든 AI 작업을 즉시 중단합니다. 작업 데이터는 유지됩니다.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

@@ -1,3 +1,7 @@
+---
+name: teamLimit
+description: 팀 한도 설정 — 동시에 실행할 수 있는 Sub AI 최대 수를 설정합니다.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 

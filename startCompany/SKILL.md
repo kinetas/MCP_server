@@ -1,3 +1,7 @@
+---
+name: startCompany
+description: Main AI 초기화 — Boss AI, HR AI, Monitoring AI, Collector AI를 가동합니다.
+---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 
