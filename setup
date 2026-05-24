@@ -32,7 +32,8 @@ Available skills:
 /createCompany, /startCompany, /stopCompany, /deleteCompany,
 /projectStart, /interceptBoss, /companyMonitering,
 /holidayStart, /holidayOver, /teamLimit,
-/autoReport, /giveMeReport, /debugLimit, /adjustCodingRule
+/autoReport, /giveMeReport, /debugLimit, /adjustCodingRule,
+/setupDoc
 '
 
 echo ""
