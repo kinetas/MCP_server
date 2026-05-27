@@ -10,7 +10,7 @@ Last Updated: 2026-05-24
 /createCompany              : 기본 폴더/파일 구조 생성
 /startCompany               : Main AI 초기화 및 시스템 가동
 /stopCompany                : 모든 AI 프로세스 일시정지
-/deleteCompany              : 워크스페이스 및 모든 데이터 삭제
+/deleteCompany              : 배포 전 정리 — AI 운영 파일 삭제 후 PRD+report 기반 README.md 자동 생성
 
 --- 프로젝트 진행 ---
 /setupDoc                   : PRD 및 Coding Rule을 대화형 Q&A로 작성하는 마법사
