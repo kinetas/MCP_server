@@ -1,6 +1,6 @@
 ---
 name: startCompany
-description: Main AI 초기화 — Boss AI, HR AI, Monitoring AI, Collector AI를 가동합니다.
+description: Main AI 초기화 — Boss AI, Manager AI, Monitoring AI, Collector AI를 가동합니다.
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
@@ -26,53 +26,22 @@ If any are missing, tell the user:
 
 ## Step 2 — Create `doc/AI_list.txt`
 
-Create `doc/AI_list.txt` with the following content:
+Create `doc/AI_list.txt` with the following content.
+Use `managerLimit` and `subAILimit` values from `doc/company_state.json`.
 
 ```
-[Main AI]
+[Capacity]
+Manager Limit     : 3
+Sub AI per Manager: 4
 
-Boss AI
-- STATUS: ACTIVE
-- ROLE: User Communication / Task Distribution
-
-HR AI
-- STATUS: ACTIVE
-- ROLE: AI Lifecycle Management (Sub AI 생성/배정/해제 전담)
-
-Monitoring AI
-- STATUS: ACTIVE
-- ROLE: Resource Monitoring
-
-Collector AI
-- STATUS: ACTIVE
-- ROLE: Report Collection
-
---------------------------------------------------
-
-[Sub AI]
-
-(없음 - Boss AI 요청 시 HR AI가 생성 및 배정)
-
---------------------------------------------------
-
-[Team Status]
-
-Current Active Sub AI : 0
-Team Limit            : 5
-Available Slot        : 5
+[Status]
+Active Managers   : 0
+Available Managers: 3
 ```
 
-**HR AI 규칙 (이 파일에 주석으로 명시할 것):**
-- Sub AI 항목 추가/수정/삭제는 HR AI만 수행한다.
-- Boss AI는 이 파일을 읽기만 한다. 직접 수정하지 않는다.
-- Sub AI 항목 형식:
-
-```
-[AI 이름]
-- STATUS      : WORKING | IDLE | WAITING
-- SPECIALTY   : [담당 기술/역량]
-- CURRENT TASK: [TASK-XXX 작업명] | None
-```
+**AI_list.txt 쓰기 규칙:**
+- Boss AI: Active Managers 카운트 + 세그먼트 항목 추가/삭제 + Available 업데이트.
+- Manager AI: 자신의 세그먼트 항목의 Sub AI 카운트만 수정. 타 항목 절대 수정 불가.
 
 ---
 
@@ -84,10 +53,12 @@ Set `startedAt` to the current date and time (ISO format).
 ```json
 {
   "status": "active",
-  "teamLimit": 5,
+  "managerLimit": 3,
+  "subAILimit": 4,
   "debugLimit": 1,
   "autoReport": true,
   "monitoringEnabled": true,
+  "collectorMode": 1,
   "bossMode": false,
   "holidayMode": false,
   "taskCounter": 0,
@@ -103,16 +74,17 @@ Set `startedAt` to the current date and time (ISO format).
 🚀 Harness Engineering 시스템 가동
 
 Main AI 초기화 완료:
- ├─ Boss AI       ✅ ACTIVE  (유저 소통 / 작업 총괄)
- ├─ HR AI         ✅ ACTIVE  (AI 생성 및 명단 관리)
- ├─ Monitoring AI ✅ ACTIVE  (자원 감시)
- └─ Collector AI  ✅ ACTIVE  (보고서 취합)
+ ├─ Boss AI       ✅ ACTIVE     (유저 소통 / 의존성 그래프 관리 / 배치 총괄)
+ ├─ Manager AI         ✅ ON-DEMAND  (Team Leader — 세그먼트 위임, Sub AI 배분)
+ ├─ Monitoring AI ✅ ON-DEMAND  (태스크 완료 시 자원 감시)
+ └─ Collector AI  ✅ ON-DEMAND  (태스크 완료 시 보고서 취합)
 
 설정:
- ├─ Team Limit  : 5
- ├─ Debug Limit : 1회
- ├─ Auto Report : ON
- └─ Boss Mode   : OFF
+ ├─ Manager Limit    : 3 (동시 세그먼트)
+ ├─ Sub AI per Manager: 4
+ ├─ Debug Limit      : 1회
+ ├─ Auto Report      : ON
+ └─ Boss Mode        : OFF
 
 다음 단계:
 1. doc/PRD.md 에 프로젝트 요구사항 작성

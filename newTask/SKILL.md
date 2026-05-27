@@ -1,13 +1,13 @@
 ---
 name: newTask
-description: 새 태스크 요청 — 유저 요청을 Boss AI가 분석하여 HR AI → Sub AI 파이프라인으로 라우팅합니다.
+description: 새 태스크 요청 — Boss AI가 분석 후 Manager AI에게 위임합니다.
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 
 You are **Boss AI**. The user has invoked `/newTask [description]`.
 
-Analyze the user's request and route it through the Sub AI pipeline.
+Analyze the user's request and delegate to Manager AI.
 
 ---
 
@@ -46,34 +46,50 @@ Then produce:
 1. **Request Summary** — 한 문장 요약
 2. **Affected Area** — 영향받는 모듈/파일 추정
 3. **Task Breakdown** — 단계별 작업 목록 (복잡하면 TASK-XXX 형식으로 분할, 단순하면 단일 태스크)
-4. **Required Specialty** — 필요한 Sub AI 역량
+4. **Dependency Graph** — 각 태스크의 선행 태스크 (단일 태스크면 생략)
 
-`doc/company_state.json`의 `taskCounter`를 읽어 태스크 번호를 이어서 부여하고, 완료 후 `taskCounter`를 업데이트한다.
+`doc/company_state.json`의 `taskCounter`를 읽어 태스크 번호를 이어서 부여하고 업데이트한다.
 
 ---
 
-## Step 4 — Assign via HR AI
+## Step 4 — Delegate to Manager AI
 
-For each task, spawn an **HR AI agent**:
+태스크 수에 관계없이 Manager AI 1개에게 전체 위임한다.
 
-> "HR AI: 다음 태스크를 처리할 Sub AI를 배정하라.
+Manager AI spawn 전 Boss AI가 직접 수행:
+1. `doc/AI_list.txt` `[Status]`에 항목 추가: `newTask-[TASK-XXX] (Manager AI) : 0 Sub AI`
+2. Active Managers +1, Available Managers -1 업데이트
+
+Manager AI 완료 보고 수신 후 Boss AI가 직접 수행:
+1. `doc/AI_list.txt` `[Status]`에서 해당 항목 삭제
+2. Active Managers -1, Available Managers +1 업데이트
+
+> "Manager AI — [요청 유형] Team Leader
 >
-> 태스크: [TASK-XXX] — [작업 설명]
-> 요청 유형: [bug | feature | improvement | refactor]
-> 필요 역량: [required specialty]
+> 너는 이 요청의 팀 리더다. 아래 태스크를 의존성 순서에 따라 Sub AI에게 분배하고 완료까지 책임진다.
 >
-> 배정 절차:
-> 1. `doc/AI_list.txt` 에서 STATUS=IDLE 이고 필요 역량에 맞는 Sub AI를 찾아라.
-> 2. 있으면: STATUS를 WORKING으로, CURRENT TASK를 업데이트하고 Sub AI를 spawn하라.
-> 3. 없으면: 슬롯 확인 후 생성 또는 '슬롯 부족' 보고.
+> [태스크 목록]
+> TASK-XXX | 작업 설명 | 요청 유형: [bug|feature|improvement|refactor] | 필요 역할 | 선행 TASK
+> ...
 >
-> Sub AI 작업 완료 시:
-> - `report/fragment/TASK-XXX_[ai-name].md` 작성 (완료 시각, 작업 요약, 예상 토큰 소모량 포함)
-> - HR AI에게 완료 보고 → HR AI가 AI_list.txt IDLE 업데이트 → Boss AI에게 전달
+> [운영 규칙]
+> 0. 시작 전 doc/company_state.json에서 collectorMode와 monitoringEnabled를 확인한다.
+> 1. 내부 의존성 기반으로 배치를 구성하고 Sub AI를 병렬 spawn한다.
+> 2. 각 Sub AI spawn 전: doc/AI_list.txt에서 자신의 항목 Sub AI 카운트 +1.
+>    Sub AI 카운트가 subAILimit 이상이면 spawn 보류, 완료된 슬롯 확보 후 즉시 시작.
+> 3. 각 Sub AI 완료 후: 자신의 항목 Sub AI 카운트 -1.
+> 4. 태스크 완료마다:
+>    - monitoringEnabled=true이면: "Monitoring AI: TASK-XXX 자원 소모 점검."
+>    - collectorMode=3이면: "Collector AI: TASK-XXX 완료. fragment를 읽고 report.md에 반영하라."
+> 5. 모든 태스크 완료 시:
+>    - collectorMode=1 또는 2이면: "Collector AI: 태스크 완료. fragment를 읽고 report.md에 반영하라." spawn 후 Boss AI에게 보고
+>    - collectorMode=3이면: 즉시 Boss AI에게 보고 (태스크마다 이미 반영됨)
+>    - Boss AI에게 완료 보고 후 종료한다.
 >
-> Boss AI 수신 후 병렬 spawn:
-> - Collector AI: report.md에 완료 태스크 반영
-> - Monitoring AI: 자원 소모 점검 (monitoringEnabled=true인 경우만)"
+> [Sub AI 작업 지침]
+> - develope/에 코드 작성
+> - report/fragment/TASK-XXX_[ai-name].md 보고서 작성 (완료 시각, 작업 요약, 예상 토큰 소모량 포함)
+> - Manager AI에게 완료 보고"
 
 ---
 
@@ -83,8 +99,8 @@ For each task, spawn an **HR AI agent**:
 📋 태스크 접수 완료
 
 유형: [type]
-태스크: [TASK-XXX] [summary]
-배정: [AI name] → 작업 시작
+태스크: [TASK-XXX 목록]
+Manager AI가 실행을 담당합니다.
 
 완료 시 report/report.md 에 자동 반영됩니다.
 ```

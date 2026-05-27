@@ -1,55 +1,80 @@
 ---
 name: teamLimit
-description: 팀 한도 설정 — 동시에 실행할 수 있는 Sub AI 최대 수를 설정합니다.
+description: AI 용량 설정 — Manager AI 최대 수와 Manager당 Sub AI 최대 수를 대화형으로 설정합니다.
 ---
 
-{{ROLE}} The user has invoked `/teamLimit [n]`.
+{{ROLE}} The user has invoked `/teamLimit`.
 
-Set the maximum number of Sub AIs that can run simultaneously.
+Interactively configure Manager AI and Sub AI capacity limits.
 
 ---
 
-## Step 1 — Parse Argument
+## Step 1 — Read Current State
 
-The user may have provided a number after `/teamLimit`, e.g. `/teamLimit 8`.
+{{READ_COMPANY_STATE}}
 
-- If a number is provided: use that as the new limit
-- If no number is provided: show current limit and ask user for a value
+If `doc/company_state.json` does not exist, tell the user:
+> "시스템이 초기화되지 않았습니다. 먼저 /startCompany 를 실행해주세요."
+
+Read `doc/AI_list.txt` to check current active counts.
+
+---
+
+## Step 2 — Show Current Settings & Ask
+
+현재 설정을 보여준 뒤 두 가지 값을 순서대로 묻는다.
 
 ```
-현재 Team Limit: [current teamLimit]
-현재 가동 중인 Sub AI: [current count]
+⚙️ 현재 AI 용량 설정
 
-새로운 한도를 숫자로 입력해주세요.
+Manager Limit     : [managerLimit]  (동시 실행 가능한 세그먼트 수)
+Sub AI per Manager: [subAILimit]    (세그먼트당 동시 작업 Sub AI 수)
+
+현재 활성 Manager: [Active Managers]
 ```
 
+**질문 1 — Manager AI 최대 수:**
+> "Boss AI가 동시에 실행할 수 있는 Manager AI(세그먼트) 최대 수를 입력해주세요.
+> 현재: [managerLimit] / 활성: [Active Managers]
+> (1 이상의 정수, 엔터로 현재 값 유지)"
+
+**질문 2 — Manager당 Sub AI 최대 수:**
+> "Manager AI 1개가 동시에 부릴 수 있는 Sub AI 최대 수를 입력해주세요.
+> 현재: [subAILimit]
+> (1 이상의 정수, 엔터로 현재 값 유지)"
+
 ---
 
-## Step 2 — Validate
+## Step 3 — Validate
 
-- Minimum allowed value: 1
-- If the new limit is LESS than the current number of active Sub AIs, warn the user:
-  > "⚠️ 현재 가동 중인 Sub AI([count]개)보다 낮은 값입니다. 일부 Sub AI가 다음 작업 완료 후 종료됩니다. 계속하시겠습니까? (y/n)"
+- 두 값 모두 1 이상이어야 한다.
+- 새 managerLimit이 현재 Active Managers보다 작으면 경고:
+  > "⚠️ 현재 활성 Manager AI([n]개)보다 낮습니다. 진행 중인 세그먼트는 완료까지 유지되며, 이후 새 세그먼트 spawn이 제한됩니다. 계속하시겠습니까? (y/n)"
 
 ---
 
-## Step 3 — Update State
+## Step 4 — Update State
 
 Update `doc/company_state.json`:
-- Set `"teamLimit": [n]`
+- `"managerLimit"`: new value
+- `"subAILimit"`: new value
 
-Update `doc/AI_list.txt` Team Status section:
-- `Team Limit` → new value
-- `Available Slot` → teamLimit - current active Sub AI count
+Update `doc/AI_list.txt` Capacity section:
+- `Manager Limit` → new managerLimit
+- `Sub AI per Manager` → new subAILimit
+- `Available Managers` → managerLimit - Active Managers
 
 ---
 
-## Step 4 — Report to User
+## Step 5 — Report to User
 
 ```
-⚙️ Team Limit 변경
+✅ AI 용량 설정 완료
 
-이전: [old limit]  →  새로운 한도: [n]
-현재 가동 Sub AI: [current count]
-가용 슬롯: [available]
+Manager Limit     : [old] → [new]
+Sub AI per Manager: [old] → [new]
+
+현재 활성 Manager : [n]
+가용 Manager 슬롯 : [available]
+최대 동시 Sub AI  : [managerLimit × subAILimit]
 ```

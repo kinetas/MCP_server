@@ -21,18 +21,18 @@ git clone --single-branch --depth 1 https://github.com/kinetas/harness_engineeri
 ### 프로젝트 진행
 | 스킬 | 설명 |
 |---|---|
-| `/projectStart` | PRD 분석 후 전체 프로젝트 시작 |
-| `/newTask [요청]` | 개별 태스크 요청 — Boss AI가 분석 후 HR AI → Sub AI 라우팅 |
+| `/projectStart` | PRD 분석 후 전체 프로젝트 시작 — DAG 기반 세그먼트 분할 후 Manager AI 병렬 위임 |
+| `/newTask [요청]` | 개별 태스크 요청 — Boss AI가 의존성 분석 후 Manager AI에게 위임 |
 | `/bossMode [on\|off]` | Boss AI 상시 모드 토글 — on 시 유저 입력 자동 인터셉트 |
 | `/complainProject` | 변경 요청 마법사 — 개선/수정 사항을 대화형으로 수집하여 CHANGE_REQUEST.md 작성 및 PRD 업데이트 |
-| `/changeStart` | 변경 개발 시작 — CHANGE_REQUEST.md 기반으로 태스크 계획 후 Sub AI 배정 |
+| `/changeStart` | 변경 개발 시작 — CHANGE_REQUEST.md 기반 DAG 분석 후 Manager AI 병렬 위임 |
 | `/setupDoc` | PRD / Coding Rule 대화형 작성 마법사 |
 
 ### 팀 운영
 | 스킬 | 설명 |
 |---|---|
 | `/interceptBoss` | Boss AI 대기 모드 전환 |
-| `/teamLimit [n]` | Sub AI 팀 한도 변경 |
+| `/teamLimit` | AI 용량 대화형 설정 — Manager AI 최대 수 및 Manager당 Sub AI 최대 수 |
 | `/holidayStart` | 휴일 모드 (Sub AI 일시 정지) |
 | `/holidayOver` | 휴일 모드 해제 |
 
@@ -47,7 +47,15 @@ git clone --single-branch --depth 1 https://github.com/kinetas/harness_engineeri
 | 스킬 | 설명 |
 |---|---|
 | `/autoReport` | Collector AI 자동 보고서 수집 토글 |
+| `/collectorMode [n]` | Collector AI 실행 시점 설정 — 1(세그먼트, 기본) / 2(프로젝트) / 3(태스크마다) |
 | `/giveMeReport` | 현재 report.md 요약 출력 |
+
+### 확장 기능
+| 스킬 | 설명 |
+|---|---|
+| `/installExtension [url]` | git URL에서 확장 기능 설치 |
+| `/removeExtension [name]` | 설치된 확장 기능 제거 |
+| `/listExtensions` | 설치된 확장 기능 목록 출력 |
 
 ---
 

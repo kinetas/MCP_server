@@ -1,11 +1,11 @@
 ---
 name: projectStart
-description: 프로젝트 시작 — PRD를 분석하고 작업을 분해하여 Sub AI에게 위임합니다.
+description: 프로젝트 시작 — Boss AI가 DAG를 생성하고 Dependency Island 기반으로 세그먼트를 분할하여 Manager AI에게 위임합니다.
 ---
 
 {{ROLE}} The user has invoked `/projectStart`.
 
-Your job is to read the PRD, plan the entire project, and begin delegating work to Sub AIs.
+Your job is to read the PRD, build a DAG, partition it into dependency islands, and delegate each segment to a Manager AI (Bounded Context Coordinator).
 
 ---
 
@@ -18,96 +18,170 @@ If `doc/PRD.md` is empty or contains only the template placeholder text, stop an
 
 ---
 
-## Step 2 — Analyze PRD
+## Step 2 — Build DAG & Segment Partition
 
-As Boss AI, analyze the PRD and produce:
+Boss AI는 아래 4단계 알고리즘으로 세그먼트를 구성한다.
 
-1. **Project Summary** — 한 문단 요약
-2. **Task Breakdown** — 단계별 작업 목록 (TASK-001, TASK-002, ...)
-3. **Dependency Map** — 어떤 작업이 선행되어야 하는지
-4. **AI Assignment Plan** — 각 TASK에 어떤 역할의 AI가 필요한지
+### STEP 2-1 — DAG 생성
 
-Use this format for each task:
+각 태스크를 노드로, 의존성을 방향 엣지로 하는 DAG를 생성한다.
+
+각 태스크에 명시할 정보:
 ```
-TASK-XXX | 작업 설명 | 담당 AI 역할 | 선행 TASK
+{
+  "id": "TASK-XXX",
+  "description": "작업 설명",
+  "deps": ["TASK-YYY"],       // 선행 태스크 (없으면 [])
+  "domain": "backend|frontend|infra|testing|docs",
+  "files": ["예상 작업 파일 경로들"]  // File Ownership 판단 기준
+}
 ```
+
+`doc/company_state.json`의 `taskCounter`를 읽어 태스크 번호를 이어서 부여하고 업데이트한다.
+
+### STEP 2-2 — Topological Layering
+
+DAG를 BFS 기반으로 레이어로 구분한다:
+- **Layer 1**: deps가 없는 태스크 (루트 노드)
+- **Layer N**: 모든 선행 태스크가 Layer N-1 이하에 속하는 태스크
+
+```
+예시:
+Layer 1: schema, infra
+Layer 2: repository, config
+Layer 3: auth_api, user_api, billing_api, frontend_login
+Layer 4: integration_test, deploy
+```
+
+### STEP 2-3 — Domain Clustering
+
+같은 레이어 내에서 domain별로 클러스터링한다:
+- `backend/*` — 서버 로직, API, 인증
+- `frontend/*` — UI, 컴포넌트
+- `infra/*` — DB, 설정, 공유 타입
+- `testing/*` — 통합 테스트, e2e
+
+**File Ownership 원칙** (가장 중요):
+- 같은 파일을 수정하는 태스크는 반드시 같은 세그먼트에 배치한다
+- Manager AI 간 파일 중복은 절대 금지
+
+**Shared Infra 원칙**:
+- DB schema, config, shared types처럼 여러 세그먼트가 의존하는 태스크는 별도 세그먼트로 분리한다
+
+**Verification 원칙**:
+- 테스트/검증 태스크는 별도 세그먼트로 분리한다
+
+### STEP 2-4 — Segment 생성 + Dependency Contract
+
+각 세그먼트에 Dependency Contract를 정의한다:
+
+```json
+{
+  "segment_id": "backend_core",
+  "manager": "Manager AI-01",
+  "tasks": ["TASK-002", "TASK-003", "TASK-004"],
+  "file_ownership": ["backend/auth/*", "backend/user/*", "backend/billing/*"],
+  "imports": ["DatabaseSchema"],    // 다른 세그먼트에서 완료되어야 하는 결과물
+  "exports": ["UserRepository", "AuthAPI", "BillingAPI"]  // 이 세그먼트가 생산하는 결과물
+}
+```
+
+세그먼트 간 의존성은 `imports` / `exports` 계약으로 명시한다.
 
 ---
 
-## Step 3 — Assign Tasks via HR AI
+## Step 3 — Execute Segments via Manager AIs
 
-For each task in the plan, request HR AI to handle the assignment.
-Tasks without dependencies can be assigned in parallel.
+Boss AI가 세그먼트 간 의존성(imports/exports 계약)을 기준으로 Manager AI를 조율한다.
 
-Spawn an **HR AI agent** for each task (or batch of independent tasks) with the following instruction:
+- `imports`가 없는 세그먼트 → 즉시 Manager AI spawn (병렬 가능)
+- `imports`가 있는 세그먼트 → 해당 exports가 모두 완료된 후 spawn
 
-> "HR AI: 다음 태스크를 처리할 Sub AI를 배정하라.
+Manager AI spawn 전 Boss AI가 직접 수행:
+1. `doc/AI_list.txt` `[Status]`에 세그먼트 항목 추가: `{segment_id} (Manager AI-{N}) : 0 Sub AI`
+2. Active Managers +1, Available Managers -1 업데이트
+3. Active Managers가 managerLimit 이상이면 spawn 보류, 슬롯 확보 후 즉시 시작
+
+### Manager AI 지침 (각 세그먼트마다)
+
+> "Manager AI [N] — [segment_id] Bounded Context Coordinator
 >
-> 태스크: [TASK-XXX] — [작업 설명]
-> 필요 역량: [required specialty, e.g. Backend / Frontend / DB]
+> 너는 이 세그먼트의 경계를 소유한 코디네이터다.
+> 아래 태스크와 파일을 전담하며, 다른 세그먼트의 파일은 절대 수정하지 않는다.
 >
-> 배정 절차:
-> 1. `doc/AI_list.txt` 에서 STATUS=IDLE 이고 필요 역량에 맞는 Sub AI를 찾아라.
-> 2. 있으면: 해당 Sub AI의 STATUS를 WORKING으로, CURRENT TASK를 '[TASK-XXX] [작업 설명]'으로 업데이트하고 Sub AI를 spawn하라.
-> 3. 없으면: 새 슬롯이 있는지 확인하라. (`doc/company_state.json`의 teamLimit 기준)
->    - 슬롯 있음: 새 Sub AI 항목을 `doc/AI_list.txt`에 추가(STATUS: WORKING, CURRENT TASK 기록)하고 spawn하라.
->    - 슬롯 없음: Boss AI에게 '슬롯 부족 — [TASK-XXX] 대기 중' 보고.
+> [Dependency Contract]
+> - segment_id: [segment_id]
+> - file_ownership: [파일/폴더 목록] — 이 경로만 수정 가능
+> - imports: [다른 세그먼트로부터 받은 결과물 목록]
+> - exports: [이 세그먼트가 완료 시 제공할 결과물 목록]
 >
-> Sub AI 작업 완료 시 HR AI는 반드시:
-> - 해당 Sub AI의 STATUS를 IDLE로 변경
-> - CURRENT TASK를 None으로 변경
-> - Team Status의 숫자를 재계산하여 업데이트
-> - Boss AI에게 완료 보고
+> [담당 태스크 (내부 의존성 포함)]
+> TASK-XXX | 작업 설명 | 필요 역할 | 내부 선행 TASK
+> ...
 >
-> Boss AI는 직접 `doc/AI_list.txt`를 수정하지 않는다. 모든 AI 명단 변경은 HR AI만 수행한다."
+> [운영 규칙]
+> 0. 시작 전 doc/company_state.json에서 collectorMode와 monitoringEnabled를 확인한다.
+> 1. 내부 의존성 기반으로 배치를 구성하고 Sub AI를 병렬 spawn한다.
+> 2. 각 Sub AI spawn 전: doc/AI_list.txt에서 자신의 세그먼트 항목 Sub AI 카운트 +1.
+>    Sub AI 카운트가 subAILimit 이상이면 spawn 보류, 완료된 Sub AI 슬롯 확보 후 즉시 시작.
+>    타 세그먼트 항목은 절대 수정하지 않는다.
+> 3. 각 Sub AI 완료 후: 자신의 세그먼트 항목 Sub AI 카운트 -1.
+> 4. 태스크 완료마다:
+>    - monitoringEnabled=true이면: "Monitoring AI: TASK-XXX 자원 소모 점검."
+>    - collectorMode=3이면: "Collector AI: TASK-XXX 완료. fragment를 읽고 report.md에 반영하라."
+> 5. 세그먼트 완료 시:
+>    - collectorMode=1이면: "Collector AI: [segment_id] 세그먼트 완료. fragment를 읽고 report.md에 반영하라." spawn 후 Boss AI에게 보고
+>    - collectorMode=2이면: Collector AI 없이 즉시 Boss AI에게 보고
+>    - collectorMode=3이면: 즉시 Boss AI에게 보고 (태스크마다 이미 반영됨)
+>    - exports 결과물 목록과 함께 Boss AI에게 보고 후 종료한다.
+>
+> [Sub AI 작업 지침]
+> - 담당 file_ownership 경로에만 코드 작성
+> - report/fragment/TASK-XXX_[ai-name].md 보고서 작성
+>   (포함: 완료 시각, 작업 요약, 주요 결정사항, 생성/수정 파일 목록, 예상 토큰 소모량(대/중/소))
+> - Manager AI에게 완료 보고
+>
+> Manager AI는 직접 코드를 작성하지 않는다. Sub AI에게만 위임한다."
 
-Sub AI must follow this work cycle:
-1. 지시된 작업 수행
-2. `develope/` 에 코드 작성
-3. `report/fragment/TASK-XXX_[ai-name].md` 보고서 작성
-   - 보고서에 반드시 포함: 완료 시각, 작업 요약, 주요 결정사항, 예상 토큰 소모량(대/중/소)
-4. HR AI에게 완료 보고 → HR AI가 AI_list.txt 업데이트 후 Boss AI에게 전달
+### 세그먼트 완료 후 처리
 
-**Sub AI 완료 수신 시 Boss AI 처리 절차:**
+세그먼트 완료 보고를 받으면:
+- exports 결과물을 의존성 계약에 반영
+- 해당 exports를 imports로 가진 세그먼트의 준비 여부 확인
+- 준비된 세그먼트가 있으면 즉시 Manager AI spawn
 
-HR AI로부터 태스크 완료 보고를 받으면, Boss AI는 다음 두 에이전트를 **병렬로** spawn한다:
+세그먼트 완료 보고를 받으면 Boss AI가 직접 수행:
+- `doc/AI_list.txt` `[Status]`에서 해당 세그먼트 항목 삭제
+- Active Managers -1, Available Managers +1 업데이트
 
-> **Collector AI**: "TASK-XXX 가 완료되었다. `report/fragment/TASK-XXX_[ai-name].md` 를 읽고 `report/report.md` 에 반영하라. 완료된 태스크를 Current Working Tasks에서 Completed로 이동하고 AI Activity Summary를 업데이트하라. Boss AI는 report.md를 직접 수정하지 않는다."
-
-> **Monitoring AI** (`doc/company_state.json`의 `monitoringEnabled`가 `true`인 경우에만):
-> "Monitoring AI: TASK-XXX 완료 후 자원 소모를 점검하라.
-> `report/fragment/TASK-XXX_[ai-name].md` 를 읽어 토큰 소모량 및 이상 패턴을 확인하라.
-> 이상 감지 기준:
-> - 토큰 소모가 '대'로 표시된 경우
-> - 동일 오류 반복 언급
-> - 작업 범위 초과 징후
-> 이상 감지 시: `doc/AI_anomaly.txt` 에 기록 후 Boss AI에게 경고.
-> 정상이면: 보고 생략."
-
-두 에이전트 완료 후 Boss AI는 다음 대기 태스크를 HR AI에게 배정한다.
+모든 세그먼트가 완료되면:
+- collectorMode=2이면: Collector AI 1회 spawn
+  > "Collector AI: 프로젝트 완료. 모든 fragment를 읽고 report.md를 최종 업데이트하라."
 
 ---
 
 ## Step 4 — Initial Report on Project Start
 
-프로젝트 시작 직후 한 번만, **Collector AI**를 spawn하여 초기 상태를 report.md에 반영한다:
+프로젝트 시작 직후 Collector AI를 1회 spawn:
+> "Collector AI: 프로젝트가 시작되었다. report/report.md를 현재 상태로 업데이트하라.
+> - 세그먼트 구성 및 태스크 목록
+> - Project Status: 진행 중"
 
-> "Collector AI: 프로젝트가 시작되었다. `report/report.md` 를 현재 상태로 업데이트하라.
-> - Current Working Tasks: [배정된 태스크 목록]
-> - Project Status: 진행 중
-> - AI Activity Summary: 현재 배정된 AI 목록
-> `doc/AI_list.txt` 를 읽어 최신 현황을 반영하라."
-
----
-
-## Step 5 — Report to User
-
-Tell the user:
+유저에게 보고:
 ```
 🚀 프로젝트 시작
 
-분석 완료: [task count]개 작업 식별
-AI 배정: [ai assignments summary]
+태스크: [n]개 / 레이어: [n]단계 / 세그먼트: [n]개
+
+세그먼트 구성:
+  [segment_id] (Manager AI-N): TASK-XXX, ...
+    └─ imports: [...] / exports: [...]
+  [segment_id] (Manager AI-N): TASK-XXX, ...
+    └─ imports: [...] / exports: [...]
+
+실행 순서:
+  즉시 시작: [segment_id, ...]
+  대기 중:   [segment_id] (기다리는 exports: [...])
 
 진행 상황은 report/report.md 에서 확인하세요.
 ```
