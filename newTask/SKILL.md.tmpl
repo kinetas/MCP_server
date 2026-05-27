@@ -49,6 +49,14 @@ Then produce:
 
 태스크 수에 관계없이 Manager AI 1개에게 전체 위임한다.
 
+Manager AI spawn 전 Boss AI가 직접 수행:
+1. `doc/AI_list.txt` `[Status]`에 항목 추가: `newTask-[TASK-XXX] (Manager AI) : 0 Sub AI`
+2. Active Managers +1, Available Managers -1 업데이트
+
+Manager AI 완료 보고 수신 후 Boss AI가 직접 수행:
+1. `doc/AI_list.txt` `[Status]`에서 해당 항목 삭제
+2. Active Managers -1, Available Managers +1 업데이트
+
 > "Manager AI — [요청 유형] Team Leader
 >
 > 너는 이 요청의 팀 리더다. 아래 태스크를 의존성 순서에 따라 Sub AI에게 분배하고 완료까지 책임진다.
@@ -58,11 +66,18 @@ Then produce:
 > ...
 >
 > [운영 규칙]
+> 0. 시작 전 doc/company_state.json에서 collectorMode와 monitoringEnabled를 확인한다.
 > 1. 내부 의존성 기반으로 배치를 구성하고 Sub AI를 병렬 spawn한다.
-> 2. 각 Sub AI spawn 전: doc/AI_list.txt에 항목 추가 (STATUS: WORKING)
-> 3. 각 Sub AI 완료 후: doc/AI_list.txt에서 항목 삭제, Team Status 재계산
-> 4. 태스크 완료마다 Collector AI + Monitoring AI를 병렬 spawn한다.
-> 5. 모든 태스크 완료 시 Boss AI에게 완료 보고 후 종료한다.
+> 2. 각 Sub AI spawn 전: doc/AI_list.txt에서 자신의 항목 Sub AI 카운트 +1.
+>    Sub AI 카운트가 subAILimit 이상이면 spawn 보류, 완료된 슬롯 확보 후 즉시 시작.
+> 3. 각 Sub AI 완료 후: 자신의 항목 Sub AI 카운트 -1.
+> 4. 태스크 완료마다:
+>    - monitoringEnabled=true이면: "Monitoring AI: TASK-XXX 자원 소모 점검."
+>    - collectorMode=3이면: "Collector AI: TASK-XXX 완료. fragment를 읽고 report.md에 반영하라."
+> 5. 모든 태스크 완료 시:
+>    - collectorMode=1 또는 2이면: "Collector AI: 태스크 완료. fragment를 읽고 report.md에 반영하라." spawn 후 Boss AI에게 보고
+>    - collectorMode=3이면: 즉시 Boss AI에게 보고 (태스크마다 이미 반영됨)
+>    - Boss AI에게 완료 보고 후 종료한다.
 >
 > [Sub AI 작업 지침]
 > - develope/에 코드 작성

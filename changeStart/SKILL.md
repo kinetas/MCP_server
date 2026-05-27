@@ -73,6 +73,11 @@ DAG를 BFS 기반으로 레이어로 구분한다.
 `imports`가 없는 세그먼트부터 Manager AI를 spawn (병렬 가능).
 exports 완료 시 해당 imports를 가진 세그먼트를 즉시 spawn.
 
+Manager AI spawn 전 Boss AI가 직접 수행:
+1. `doc/AI_list.txt` `[Status]`에 세그먼트 항목 추가: `{segment_id} (Manager AI-{N}) : 0 Sub AI`
+2. Active Managers +1, Available Managers -1 업데이트
+3. Active Managers가 managerLimit 이상이면 spawn 보류, 슬롯 확보 후 즉시 시작
+
 ### Manager AI 지침 (각 세그먼트마다)
 
 > "Manager AI [N] — [segment_id] Bounded Context Coordinator
@@ -91,11 +96,20 @@ exports 완료 시 해당 imports를 가진 세그먼트를 즉시 spawn.
 > ...
 >
 > [운영 규칙]
+> 0. 시작 전 doc/company_state.json에서 collectorMode와 monitoringEnabled를 확인한다.
 > 1. 내부 의존성 기반으로 배치를 구성하고 Sub AI를 병렬 spawn한다.
-> 2. 각 Sub AI spawn 전: doc/AI_list.txt에 항목 추가 (STATUS: WORKING)
-> 3. 각 Sub AI 완료 후: doc/AI_list.txt에서 항목 삭제, Team Status 재계산
-> 4. 태스크 완료마다 Collector AI + Monitoring AI를 병렬 spawn한다.
-> 5. 세그먼트 완료 시: exports 결과물 목록과 함께 Boss AI에게 보고 후 종료한다.
+> 2. 각 Sub AI spawn 전: doc/AI_list.txt에서 자신의 세그먼트 항목 Sub AI 카운트 +1.
+>    Sub AI 카운트가 subAILimit 이상이면 spawn 보류, 완료된 Sub AI 슬롯 확보 후 즉시 시작.
+>    타 세그먼트 항목은 절대 수정하지 않는다.
+> 3. 각 Sub AI 완료 후: 자신의 세그먼트 항목 Sub AI 카운트 -1.
+> 4. 태스크 완료마다:
+>    - monitoringEnabled=true이면: "Monitoring AI: TASK-XXX 자원 소모 점검."
+>    - collectorMode=3이면: "Collector AI: TASK-XXX 완료. fragment를 읽고 report.md에 반영하라."
+> 5. 세그먼트 완료 시:
+>    - collectorMode=1이면: "Collector AI: [segment_id] 세그먼트 완료. fragment를 읽고 report.md에 반영하라." spawn 후 Boss AI에게 보고
+>    - collectorMode=2이면: Collector AI 없이 즉시 Boss AI에게 보고
+>    - collectorMode=3이면: 즉시 Boss AI에게 보고 (태스크마다 이미 반영됨)
+>    - exports 결과물 목록과 함께 Boss AI에게 보고 후 종료한다.
 >
 > [Sub AI 작업 지침]
 > - 기존 코드를 먼저 읽고 변경 범위를 파악한 후 작업할 것
@@ -107,14 +121,26 @@ exports 완료 시 해당 imports를 가진 세그먼트를 즉시 spawn.
 
 ---
 
-## Step 4 — Initial Report Update
+## Step 4 — Segment Completion Handling (Boss AI)
+
+세그먼트 완료 보고를 받으면 Boss AI가 직접 수행:
+- `doc/AI_list.txt` `[Status]`에서 해당 세그먼트 항목 삭제
+- Active Managers -1, Available Managers +1 업데이트
+
+모든 세그먼트가 완료되면:
+- collectorMode=2이면: Collector AI 1회 spawn
+  > "Collector AI: 변경 개발 완료. 모든 fragment를 읽고 report.md를 최종 업데이트하라."
+
+---
+
+## Step 5 — Initial Report Update
 
 Spawn **Collector AI**:
 > "Collector AI: 변경 개발이 시작되었다. report/report.md에 세그먼트 구성, 변경 태스크 목록, Project Status를 업데이트하라."
 
 ---
 
-## Step 5 — Report to User
+## Step 6 — Report to User
 
 ```
 🔄 변경 개발 시작

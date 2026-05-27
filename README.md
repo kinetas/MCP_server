@@ -32,7 +32,7 @@ git clone --single-branch --depth 1 https://github.com/kinetas/harness_engineeri
 | 스킬 | 설명 |
 |---|---|
 | `/interceptBoss` | Boss AI 대기 모드 전환 |
-| `/teamLimit [n]` | Sub AI 팀 한도 변경 |
+| `/teamLimit` | AI 용량 대화형 설정 — Manager AI 최대 수 및 Manager당 Sub AI 최대 수 |
 | `/holidayStart` | 휴일 모드 (Sub AI 일시 정지) |
 | `/holidayOver` | 휴일 모드 해제 |
 
@@ -47,7 +47,15 @@ git clone --single-branch --depth 1 https://github.com/kinetas/harness_engineeri
 | 스킬 | 설명 |
 |---|---|
 | `/autoReport` | Collector AI 자동 보고서 수집 토글 |
+| `/collectorMode [n]` | Collector AI 실행 시점 설정 — 1(세그먼트, 기본) / 2(프로젝트) / 3(태스크마다) |
 | `/giveMeReport` | 현재 report.md 요약 출력 |
+
+### 확장 기능
+| 스킬 | 설명 |
+|---|---|
+| `/installExtension [url]` | git URL에서 확장 기능 설치 |
+| `/removeExtension [name]` | 설치된 확장 기능 제거 |
+| `/listExtensions` | 설치된 확장 기능 목록 출력 |
 
 ---
 
