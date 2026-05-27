@@ -14,11 +14,11 @@ Last Updated: 2026-05-24
 
 --- 프로젝트 진행 ---
 /setupDoc                   : PRD 및 Coding Rule을 대화형 Q&A로 작성하는 마법사
-/projectStart               : PRD를 분석하고 전체 태스크를 분해하여 Sub AI에게 위임
-/newTask [요청]              : 개별 태스크 요청 — Boss AI가 분석 후 HR AI → Sub AI 라우팅
+/projectStart               : PRD를 분석하고 의존성 기반 Wave 계획 후 같은 Wave 태스크는 병렬로 Sub AI에게 위임
+/newTask [요청]              : 개별 태스크 요청 — Boss AI가 Wave 분석 후 독립 태스크는 병렬로 Sub AI에게 위임
 /bossMode [on|off]          : Boss AI 상시 모드 토글 — on 시 모든 유저 입력 자동 인터셉트
 /complainProject            : 변경 요청 마법사 — 개선/수정 사항 수집, CHANGE_REQUEST.md 작성 및 PRD 업데이트
-/changeStart                : 변경 개발 시작 — CHANGE_REQUEST.md 기반 태스크 계획 후 Sub AI 배정
+/changeStart                : 변경 개발 시작 — CHANGE_REQUEST.md 기반 Wave 계획 후 독립 태스크는 병렬로 Sub AI에게 위임
 
 --- 팀 운영 ---
 /interceptBoss              : Boss AI 대기 모드 전환 (Secretary AI가 업무 이관)

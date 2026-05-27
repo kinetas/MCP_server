@@ -1,6 +1,6 @@
 ---
 name: changeStart
-description: 변경 개발 시작 — CHANGE_REQUEST.md를 분석하여 변경 범위 내 태스크를 계획하고 Sub AI에게 위임합니다.
+description: 변경 개발 시작 — CHANGE_REQUEST.md 기반 Wave 계획 후 독립 태스크는 병렬로 Sub AI에게 위임합니다.
 ---
 
 {{ROLE}} The user has invoked `/changeStart`.
@@ -31,7 +31,8 @@ As Boss AI, analyze CHANGE_REQUEST.md and produce:
 2. **Impact Analysis** — 기존 코드(`develope/`) 중 영향받는 파일/모듈 목록
 3. **Task Breakdown** — 변경 범위 내 작업 목록 (TASK-XXX 형식, taskCounter 이어서 부여)
 4. **Dependency Map** — 변경 태스크 간 선후 관계
-5. **AI Assignment Plan** — 각 태스크에 필요한 Sub AI 역량
+5. **Parallel Wave Plan** — 의존성 기준으로 동시 처리 가능한 Wave 그룹으로 묶기
+6. **AI Assignment Plan** — 각 태스크에 필요한 Sub AI 역량
 
 Use this format for each task:
 ```
@@ -45,9 +46,9 @@ After analysis, update `taskCounter` in `doc/company_state.json`.
 
 ---
 
-## Step 3 — Assign Tasks via HR AI
+## Step 3 — Assign Tasks via HR AI (Wave 단위 병렬 처리)
 
-For each task, spawn an **HR AI agent**:
+Wave 순서대로 처리한다. **같은 Wave의 태스크는 HR AI를 동시에 spawn한다.**
 
 > "HR AI: 다음 변경 태스크를 처리할 Sub AI를 배정하라.
 >
@@ -70,7 +71,8 @@ For each task, spawn an **HR AI agent**:
 > - HR AI: AI_list.txt IDLE 업데이트 → Boss AI 전달
 > - Boss AI: Collector AI + Monitoring AI 병렬 spawn"
 
-독립적인 태스크는 병렬로 배정한다.
+현재 Wave의 모든 태스크 완료 후 다음 Wave를 시작한다.
+슬롯 부족으로 대기 중인 태스크는 완료된 태스크 슬롯이 생기는 즉시 배정한다.
 
 ---
 

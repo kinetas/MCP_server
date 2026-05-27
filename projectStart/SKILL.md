@@ -1,6 +1,6 @@
 ---
 name: projectStart
-description: 프로젝트 시작 — PRD를 분석하고 작업을 분해하여 Sub AI에게 위임합니다.
+description: 프로젝트 시작 — PRD 분석 후 의존성 기반 Wave 계획, 병렬 처리 가능한 태스크는 동시에 Sub AI에게 위임합니다.
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
@@ -30,23 +30,38 @@ If `doc/PRD.md` is empty or contains only the template placeholder text, stop an
 As Boss AI, analyze the PRD and produce:
 
 1. **Project Summary** — 한 문단 요약
-2. **Task Breakdown** — 단계별 작업 목록 (TASK-001, TASK-002, ...)
-3. **Dependency Map** — 어떤 작업이 선행되어야 하는지
-4. **AI Assignment Plan** — 각 TASK에 어떤 역할의 AI가 필요한지
+2. **Task Breakdown** — 전체 작업 목록 (TASK-001, TASK-002, ...)
+3. **Dependency Map** — 각 TASK의 선행 TASK 목록
+4. **Parallel Wave Plan** — 의존성 기준으로 동시에 처리 가능한 Wave 그룹으로 묶기
+5. **AI Assignment Plan** — 각 TASK에 필요한 AI 역할
 
 Use this format for each task:
 ```
 TASK-XXX | 작업 설명 | 담당 AI 역할 | 선행 TASK
 ```
 
+Wave 구성 규칙:
+- 선행 TASK가 없는 것들 → Wave 1
+- Wave N의 모든 TASK가 완료되어야 시작 가능한 것들 → Wave N+1
+- 같은 Wave 안의 TASK들은 병렬 처리
+
+Example:
+```
+Wave 1: TASK-001
+Wave 2: TASK-002, TASK-003, TASK-006  ← 동시 처리
+Wave 3: TASK-004
+Wave 4: TASK-005
+```
+
 ---
 
-## Step 3 — Assign Tasks via HR AI
+## Step 3 — Assign Tasks via HR AI (Wave 단위 병렬 처리)
 
-For each task in the plan, request HR AI to handle the assignment.
-Tasks without dependencies can be assigned in parallel.
+Wave 순서대로 처리한다. **같은 Wave의 모든 태스크는 동시에 HR AI에게 요청한다.**
 
-Spawn an **HR AI agent** for each task (or batch of independent tasks) with the following instruction:
+### Wave 처리 방식
+
+현재 Wave의 모든 태스크에 대해 **HR AI를 동시에 spawn**한다 (한 태스크당 하나의 HR AI 요청):
 
 > "HR AI: 다음 태스크를 처리할 Sub AI를 배정하라.
 >
@@ -68,6 +83,16 @@ Spawn an **HR AI agent** for each task (or batch of independent tasks) with the 
 >
 > Boss AI는 직접 `doc/AI_list.txt`를 수정하지 않는다. 모든 AI 명단 변경은 HR AI만 수행한다."
 
+### 슬롯 부족 시 처리
+
+Wave 내 일부 태스크가 슬롯 부족으로 대기되면:
+- 완료된 태스크가 생길 때마다 대기 태스크를 즉시 배정
+- Wave 내 모든 태스크 완료 후 다음 Wave로 진행
+
+### Wave 완료 조건
+
+현재 Wave의 **모든 태스크**가 완료 보고를 받아야 다음 Wave를 시작한다.
+
 Sub AI must follow this work cycle:
 1. 지시된 작업 수행
 2. `develope/` 에 코드 작성
@@ -77,7 +102,8 @@ Sub AI must follow this work cycle:
 
 **Sub AI 완료 수신 시 Boss AI 처리 절차:**
 
-HR AI로부터 태스크 완료 보고를 받으면, Boss AI는 다음 두 에이전트를 **병렬로** spawn한다:
+HR AI로부터 태스크 완료 보고를 받으면, Boss AI는 다음 두 에이전트를 **병렬로** spawn한다.
+Wave 내 다른 태스크가 아직 진행 중이면 다음 Wave 시작은 보류하고 Collector/Monitoring만 처리한다:
 
 > **Collector AI**: "TASK-XXX 가 완료되었다. `report/fragment/TASK-XXX_[ai-name].md` 를 읽고 `report/report.md` 에 반영하라. 완료된 태스크를 Current Working Tasks에서 Completed로 이동하고 AI Activity Summary를 업데이트하라. Boss AI는 report.md를 직접 수정하지 않는다."
 
@@ -114,7 +140,11 @@ Tell the user:
 🚀 프로젝트 시작
 
 분석 완료: [task count]개 작업 식별
-AI 배정: [ai assignments summary]
+Wave 구성:
+  Wave 1: [TASK-XXX, ...]
+  Wave 2: [TASK-XXX, TASK-XXX, ...]  ← 병렬 처리
+  ...
 
+현재 진행: Wave 1 시작
 진행 상황은 report/report.md 에서 확인하세요.
 ```

@@ -21,11 +21,11 @@ git clone --single-branch --depth 1 https://github.com/kinetas/harness_engineeri
 ### 프로젝트 진행
 | 스킬 | 설명 |
 |---|---|
-| `/projectStart` | PRD 분석 후 전체 프로젝트 시작 |
-| `/newTask [요청]` | 개별 태스크 요청 — Boss AI가 분석 후 HR AI → Sub AI 라우팅 |
+| `/projectStart` | PRD 분석 후 전체 프로젝트 시작 — 의존성 기반 Wave 계획 후 병렬 처리 |
+| `/newTask [요청]` | 개별 태스크 요청 — Boss AI가 Wave 분석 후 병렬 처리 |
 | `/bossMode [on\|off]` | Boss AI 상시 모드 토글 — on 시 유저 입력 자동 인터셉트 |
 | `/complainProject` | 변경 요청 마법사 — 개선/수정 사항을 대화형으로 수집하여 CHANGE_REQUEST.md 작성 및 PRD 업데이트 |
-| `/changeStart` | 변경 개발 시작 — CHANGE_REQUEST.md 기반으로 태스크 계획 후 Sub AI 배정 |
+| `/changeStart` | 변경 개발 시작 — CHANGE_REQUEST.md 기반 Wave 계획 후 병렬 처리 |
 | `/setupDoc` | PRD / Coding Rule 대화형 작성 마법사 |
 
 ### 팀 운영
